@@ -1,5 +1,5 @@
 # install dependencies
-sudo apt install openjdk-18-jdk docker.io git vim socat nodejs npm
+sudo apt install openjdk-17-jdk docker.io git vim socat nodejs npm
 sudo npm install -g npm@latest
 # build
 mkdir GCServer
