@@ -1,6 +1,6 @@
 # install dependencies
 # curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install openjdk-17-jdk docker.io git vim socat nodejs npm
+sudo apt install openjdk-17-jdk docker.io docker-compose git vim socat nodejs npm python3
 sudo npm install -g npm@latest
 # build
 mkdir GCServer
@@ -14,8 +14,69 @@ ln -s ../Grasscutter_Resources/Resources resources
 cp -a ../gc-deploy/* .
 cd ..
 # database
-mkdir datebase
-sudo docker run --name gc-mongo -p 27017:27017 -v $(pwd)/database:/data/db -d mongo:latest
+mkdir database
+cd database
+touch mongod.log
+cat > mongod.conf << EOF
+storage:
+  dbPath: /data/db
+  journal:
+    enabled: true
+
+systemLog:
+  destination: file
+  logAppend: true
+  path: /var/log/mongodb/mongod.log
+
+net:
+  port: 27017
+  bindIp: 0.0.0.0
+
+processManagement:
+  timeZoneInfo: /usr/share/zoneinfo
+EOF
+mkdir db
+# cat > docker-compose.yaml << EOF
+# version: "3"
+
+# services:
+#   mongodb:
+#     image: mongo:latest
+#     container_name: gc-mongo
+#     ports:
+#       - 28019:27017
+#     volumes:
+#       - ./mongod.conf:/etc/mongod.conf
+#       - ./mongod.log:/var/log/mongodb/mongod.log
+#       - ./db:/data/db
+#     entrypoint: ["mongod", "--auth", "--config", "/etc/mongod.conf"]
+# EOF
+cat > docker-compose.yaml << EOF
+version: "3"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: gc-mongo
+    ports:
+      - 28019:27017
+    volumes:
+      - ./mongod.conf:/etc/mongod.conf
+      - ./mongod.log:/var/log/mongodb/mongod.log
+      - ./db:/data/db
+    entrypoint: ["mongod", "--config", "/etc/mongod.conf"]
+EOF
+sudo docker-compose up -d
+# sudo docker exec -it gc-mongo mongosh
+# use admin
+# db.createUser({user: 'root',pwd: '62db08297241',roles:['userAdminAnyDatabase']})
+# exit
+# sudo docker exec -it gc-mongo mongosh -u root
+# use grasscutter
+# db.createUser({user: 'gc',pwd: '62db08297241',roles:['dbOwner'],authenticationRestrictions:[{clientSource:["x.x.x.x","x.x.x.x"]}]})
+# exit
+# uri: mongodb://gc:62db08297241@xxx.xxx.xxx.xxx:28019
+cd -
 # plugins
 mkdir Grasscutter/plugins
 cd Grasscutter/plugins
